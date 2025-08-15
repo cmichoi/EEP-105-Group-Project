@@ -433,8 +433,6 @@ emissions_2014_sorted = emissions_2014.sort_values(by='Emissions', ascending=Fal
 
 top_10_emitters = emissions_2014_sorted.head(10)
 
-print(top_10_emitters)
-top_10_emitters
 
 # 2) The top 10 emitting country line plot with names attached to the lines at the end of the "adding color" subsection.
 # our top 10 countries are Canada, China, Germany, India, Iran, Japan, Russia, Saudi Arabia, South Korea, and the US
