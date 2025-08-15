@@ -472,4 +472,4 @@ df_top10_asc_sort = df_top10_asc_sort.query("Indicator == 'Emissions'")
 #Tile plot of top 10 emitting countries (lets_plot)
 tile_plot = (ggplot(data = df_top10_asc_sort, mapping = aes(x="Year", y = "Country")) +
              geom_tile(aes(fill = "Log Value")) +
-             scale_x_continuous(forma
+             scale_x_continuous(format)
