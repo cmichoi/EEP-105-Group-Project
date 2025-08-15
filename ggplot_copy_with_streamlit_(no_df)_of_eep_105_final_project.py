@@ -304,7 +304,6 @@ new_column_order = [
 ]
 data_wide = data_wide[new_column_order]
 np.random.seed(123)
-print(data_wide.sample(n=3))
 
 # make long version of the data and create new variable called Indicator to indicate where the data set came from
 data_long = data_wide.melt(
@@ -714,7 +713,6 @@ st.code(narrow1)
 
 #Original Convert dataframe back to narrow version
 df_sk_co2_temp_wide = df_sk_co2_temp.pivot(columns = "Indicator", values = "Value", index = "Year")
-df_sk_co2_temp_wide.head()
 
 # original Standardize
 df_sk_co2_temp_wide_std = df_sk_co2_temp_wide.apply(std_units)
