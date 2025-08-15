@@ -472,4 +472,166 @@ df_top10_asc_sort = df_top10_asc_sort.query("Indicator == 'Emissions'")
 #Tile plot of top 10 emitting countries (lets_plot)
 tile_plot = (ggplot(data = df_top10_asc_sort, mapping = aes(x="Year", y = "Country")) +
              geom_tile(aes(fill = "Log Value")) +
-             scale_x_continuous(format)
+             scale_x_continuous(format))
+st.pyplot(ggplot.draw(tile_plot))
+st.subheader("Raw Data Preview")
+st.dataframe(df_top10_asc_sort.head())
+
+# 4) The last facet figure, 3x2 figure that shows all of the world and then just the chosen country.
+
+st.title("Distribution of Indicators by Year and Value")
+st.write(
+    "This application visualizes the distribution of 'Emissions', "
+    "'Energy Use per person', and 'GDP per capita' for the world and South Korea "
+    "using a faceted plot."
+)
+
+#Filter the data to include 3 out of the 5 indicators
+df_3_2 = Final_df[Final_df["Indicator"].isin(["Emissions", "Energy Use PP", "GDP per capita"])]
+df_3_2= df_3_2.copy()
+
+#Make values in "Value" column numeric
+df_3_2["Value"] = pd.to_numeric(df_3_2["Value"], errors = "coerce")
+df_3_2
+
+#Facet figure (3x2)
+
+three_by_two_plot = (ggplot(data=df_3_2, mapping = aes(x="Year", y="Value", group = "Country")) +
+                     geom_line(size = 0.3, color = "black")+
+                     facet_grid(x="Region", y="Indicator", scales = "free_y")+
+                     scale_x_continuous(format = "d") +
+                     labs(title= "Distribution of Indicators by Year and Value", y = "Indicator Value", color = "black")+
+                     theme(
+                         strip_background = element_rect(fill= "black"),
+                         strip_text = element_text(color = "white", size=16, face ="bold"))
+                    )
+
+# three_by_two_plot # This line was the cause of the error.
+st.pyplot(ggplot.draw(three_by_two_plot))
+
+st.subheader("Raw Data Preview")
+st.dataframe(df_3_2.head())
+
+#Filter df_final to just include SK data for emissions and temperature
+st.title("South Korea Emissions and Temperature")
+st.write(
+    "This app visualizes CO2 emissions and temperature trends for South Korea "
+    "from 1980 to 2014, with a trend line for each indicator."
+)
+
+#Filter by indicator
+df_sk_co2_temp = Final_df[Final_df["Indicator"].isin(["Emissions", "Temperature"])]
+
+#Filter by country
+df_sk_co2_temp = df_sk_co2_temp[df_sk_co2_temp["Country"].isin(["South Korea"])]
+
+#Filter by time range
+df_sk_co2_temp = df_sk_co2_temp.query("2014 >= Year >= 1980")
+df_sk_co2_temp
+
+#Facet plot with trend lines
+facet_co2_temp_plot = (ggplot(data=df_sk_co2_temp, mapping = aes(x="Year", y="Value"))+
+                       geom_point() +
+                       scale_x_continuous(format = "d")+
+                       facet_wrap(facets = "Label", scales = "free_y")+
+                       geom_smooth(deg = 2, method = "loess", se=False, color = "blue", size = 0.8) +
+                       theme(
+                         strip_background = element_rect(color = "black", fill = "white"),
+                         strip_text = element_text(color = "black", size=16))+
+                       labs(title = "SK Emissions and Temperatures (1980-2014)")+
+                       ggsize(600, 400)
+                      )
+st.pyplot(ggplot.draw(facet_co2_temp_plot))
+
+st.subheader("Raw Data Preview")
+st.dataframe(df_sk_co2_temp)
+# facet_co2_temp_plot # This line was the cause of the error.
+
+
+"""# Data Analysis"""
+
+#Convert dataframe back to narrow version
+df_sk_co2_temp_wide = df_sk_co2_temp.pivot(columns = "Indicator", values = "Value", index = "Year")
+df_sk_co2_temp_wide.head()
+
+#Define a function for converting to standard units
+def std_units(array):
+    return (array - np.mean(array))/np.std(array)
+
+#Standardize
+df_sk_co2_temp_wide_std = df_sk_co2_temp_wide.apply(std_units)
+df_sk_co2_temp_wide_std["Emissions"] = pd.to_numeric(df_sk_co2_temp_wide_std["Emissions"].copy(), errors = "coerce")
+df_sk_co2_temp_wide_std["Temperature"] = pd.to_numeric(df_sk_co2_temp_wide_std["Temperature"].copy(), errors = "coerce")
+df_sk_co2_temp_wide_std.head()
+
+#Mean and sd for emissions and temperature of SK in standard units
+#Where x refers to emissions statistics
+#Where y refers to temperature statistics
+
+mean_x_su = np.mean(list(df_sk_co2_temp_wide_std["Emissions"]))
+mean_y_su = np.mean(list(df_sk_co2_temp_wide_std["Temperature"]))
+sd_x_su = np.std(list(df_sk_co2_temp_wide_std["Emissions"]))
+sd_y_su = np.mean(list(df_sk_co2_temp_wide_std["Temperature"]))
+
+print("Emissions mean (su): ",
+      mean_x_su,
+      "Temperature mean (su): ",
+      mean_y_su,
+      "Emissions standard deviation (su): ",
+      sd_x_su,
+      "Temperature standard deviation (su): ",
+      sd_y_su)
+
+#Mean and sd for emissions and temperature of SK in non-standardized units
+#Where x refers to emissions statistics
+#Where y refers to temperature statistics
+
+mean_x = np.mean(list(df_sk_co2_temp_wide_std ["Emissions"]))
+mean_y = np.mean(list(df_sk_co2_temp_wide_std ["Temperature"]))
+sd_x = np.std(list(df_sk_co2_temp_wide_std ["Emissions"]))
+sd_y = np.std(list(df_sk_co2_temp_wide_std ["Temperature"]))
+
+print("Emissions mean: ",
+      mean_x,
+      "Temperature mean: ",
+      mean_y,
+      "Emissions standard deviation: ",
+      sd_x,
+      "Temperature standard deviation: ",
+      sd_y)
+
+#correlation coefficient for emissions and temperature of SK
+#where x refers to emissions statistics
+#where y refers to temperature statistics
+
+x=list(df_sk_co2_temp_wide_std["Emissions"])
+y=list(df_sk_co2_temp_wide_std["Temperature"])
+coeff = stats.pearsonr(x,y)
+print("Correlation coefficient: ", coeff.statistic)
+
+#Scaled emissions and temperature plot
+st.title("Scaled Emissions vs. Temperature")
+st.write(
+    "This plot shows a scaled scatter plot of CO2 emissions against temperature "
+    "for South Korea from 1980 to 2014."
+)
+scaled_plot = (ggplot(data = df_sk_co2_temp_wide_std, mapping = aes(x="Emissions", y="Temperature"))+
+                        geom_point()+
+                        geom_smooth(method = "lm", se=False, color = "blue")+
+                 scale_x_continuous()+
+               labs(title= "US CO2 Emissions and Temperature (1980-2014)",
+                    x="Scaled Emissions (Metric Tonnes)",
+                    y= "Scaled Temperature (Fahrenheit)")+
+               ggsize(600, 400)
+                       )
+st.pyplot(ggplot.draw(scaled_plot))
+
+st.subheader("Raw Scaled Data Preview")
+st.dataframe(df_sk_co2_temp_wide_std)
+# scaled_plot # This line was the cause of the error.
+
+#Summary plot
+# The gggrid function should also be drawn using st.pyplot
+summary_plot = gggrid(plots = [co2_plot, tile_plot, facet_co2_temp_plot, scaled_plot], ncol = 2, widths = [5,5])
+st.pyplot(ggplot.draw(summary_plot))
+
